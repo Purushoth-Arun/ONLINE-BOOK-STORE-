@@ -1,0 +1,420 @@
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.util.ArrayList;
+
+class Book {
+    private String title;
+    private String author;
+    private double price;
+    private int stock;
+
+    public Book(String title, String author, double price, int stock) {
+        this.title = title;
+        this.author = author;
+        this.price = price;
+        this.stock = stock;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public int getStock() {
+        return stock;
+    }
+
+    public void setStock(int stock) {
+        this.stock = stock;
+    }
+}
+
+class Inventory {
+    private ArrayList<Book> books;
+
+    public Inventory() {
+        books = new ArrayList<>();
+    }
+
+    public void addBook(Book book) {
+        books.add(book);
+    }
+
+    public ArrayList<Book> getBooks() {
+        return books;
+    }
+}
+
+public class Main extends JFrame {
+    private CardLayout cardLayout;
+    private JPanel mainPanel;
+    private Inventory inventory;
+    private String registeredUsername;
+    private String registeredPassword;
+    private JTextArea cartArea;
+    private JTextArea trackerArea;
+    private DefaultTableModel tableModel;
+    private JTable table;
+    private double total;
+
+    public Main() {
+        inventory = new Inventory();
+        setupInventory();
+
+        // Setting up the JFrame
+        setTitle("Online Bookstore");
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // Card Layout for navigation
+        cardLayout = new CardLayout();
+        mainPanel = new JPanel(cardLayout);
+
+        // Adding Pages
+        mainPanel.add(createRegistrationPage(), "Register");
+        mainPanel.add(createLoginPage(), "Login");
+        mainPanel.add(createHomePage(), "Home");
+        mainPanel.add(createBookstorePage(), "Bookstore");
+        mainPanel.add(createBookTrackerPage(), "BookTracker");
+
+        add(mainPanel);
+        setVisible(true);
+
+        // Start at Registration Page
+        cardLayout.show(mainPanel, "Register");
+    }
+
+    private JPanel createRegistrationPage() {
+        JPanel registerPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        JLabel usernameLabel = new JLabel("Set Username:");
+        JLabel passwordLabel = new JLabel("Set Password:");
+        JTextField usernameField = new JTextField(15);
+        JPasswordField passwordField = new JPasswordField(15);
+        JLabel strengthLabel = new JLabel("Password Strength: ");
+        JButton registerButton = new JButton("Register");
+
+        // Labels and boxes for password conditions
+        JLabel conditionLowercase = new JLabel("Contains lowercase:");
+        JLabel conditionUppercase = new JLabel("Contains uppercase:");
+        JLabel conditionNumber = new JLabel("Contains number:");
+        JLabel conditionLength = new JLabel("At least 8 characters:");
+        JCheckBox boxLowercase = new JCheckBox();
+        JCheckBox boxUppercase = new JCheckBox();
+        JCheckBox boxNumber = new JCheckBox();
+        JCheckBox boxLength = new JCheckBox();
+
+        // Disable checkboxes to make them display-only
+        boxLowercase.setEnabled(false);
+        boxUppercase.setEnabled(false);
+        boxNumber.setEnabled(false);
+        boxLength.setEnabled(false);
+
+        // Add listener to check password strength and update boxes
+        passwordField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                updatePasswordStrength();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                updatePasswordStrength();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                updatePasswordStrength();
+            }
+
+            private void updatePasswordStrength() {
+                String password = new String(passwordField.getPassword());
+
+                // Update boxes based on the password
+                boxLowercase.setSelected(password.chars().anyMatch(Character::isLowerCase));
+                boxUppercase.setSelected(password.chars().anyMatch(Character::isUpperCase));
+                boxNumber.setSelected(password.chars().anyMatch(Character::isDigit));
+                boxLength.setSelected(password.length() >= 8);
+
+                // Update overall strength label
+                String strength = validatePassword(password);
+                strengthLabel.setText("Password Strength: " + strength);
+            }
+        });
+
+        registerButton.addActionListener(e -> {
+            registeredUsername = usernameField.getText();
+            registeredPassword = new String(passwordField.getPassword());
+
+            if (!registeredUsername.isEmpty() && !registeredPassword.isEmpty() && validatePassword(registeredPassword).startsWith("Strong")) {
+                JOptionPane.showMessageDialog(this, "Registration Successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                cardLayout.show(mainPanel, "Login");
+            } else {
+                JOptionPane.showMessageDialog(this, "Please set a strong password!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        // Layout components
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        registerPanel.add(usernameLabel, gbc);
+        gbc.gridx = 1;
+        registerPanel.add(usernameField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        registerPanel.add(passwordLabel, gbc);
+        gbc.gridx = 1;
+        registerPanel.add(passwordField, gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 2;
+        registerPanel.add(strengthLabel, gbc);
+
+        // Add password condition boxes and labels
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        registerPanel.add(conditionLowercase, gbc);
+        gbc.gridx = 1;
+        registerPanel.add(boxLowercase, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        registerPanel.add(conditionUppercase, gbc);
+        gbc.gridx = 1;
+        registerPanel.add(boxUppercase, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        registerPanel.add(conditionNumber, gbc);
+        gbc.gridx = 1;
+        registerPanel.add(boxNumber, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 6;
+        registerPanel.add(conditionLength, gbc);
+        gbc.gridx = 1;
+        registerPanel.add(boxLength, gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 7;
+        registerPanel.add(registerButton, gbc);
+
+        return registerPanel;
+    }
+
+    private String validatePassword(String password) {
+        if (password.length() < 3) {
+            return "Weak 😔";
+        } else if (password.length() >= 3 && password.length() < 8) {
+            return "Medium 🙂";
+        } else {
+            boolean hasUpper = password.chars().anyMatch(Character::isUpperCase);
+            boolean hasLower = password.chars().anyMatch(Character::isLowerCase);
+            boolean hasDigit = password.chars().anyMatch(Character::isDigit);
+            boolean hasSpecial = password.chars().anyMatch(c -> "!@#$%^&*()_+[]{}|;:',.<>?/".indexOf(c) >= 0);
+
+            if (hasUpper && hasLower && hasDigit && hasSpecial) {
+                return "Strong 🔒";
+            } else {
+                return "Medium 🙂";
+            }
+        }
+    }
+
+    private JPanel createLoginPage() {
+        JPanel loginPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        JLabel usernameLabel = new JLabel("Username:");
+        JLabel passwordLabel = new JLabel("Password:");
+        JTextField usernameField = new JTextField(15);
+        JPasswordField passwordField = new JPasswordField(15);
+        JButton loginButton = new JButton("Login");
+
+        loginButton.addActionListener(e -> {
+            String enteredUsername = usernameField.getText();
+            String enteredPassword = new String(passwordField.getPassword());
+
+            if (enteredUsername.equals(registeredUsername) && enteredPassword.equals(registeredPassword)) {
+                JOptionPane.showMessageDialog(this, "Login Successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                cardLayout.show(mainPanel, "Home");
+            } else {
+                JOptionPane.showMessageDialog(this, "Invalid credentials!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        loginPanel.add(usernameLabel, gbc);
+        gbc.gridx = 1;
+        loginPanel.add(usernameField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        loginPanel.add(passwordLabel, gbc);
+        gbc.gridx = 1;
+        loginPanel.add(passwordField, gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 2;
+        loginPanel.add(loginButton, gbc);
+
+        return loginPanel;
+    }
+
+    private JPanel createHomePage() {
+        JPanel homePanel = new JPanel(new GridLayout(3, 1));
+        JButton viewInventoryButton = new JButton("View Inventory");
+        JButton bookTrackerButton = new JButton("Book Tracker");
+        JButton exitButton = new JButton("Exit");
+
+        viewInventoryButton.addActionListener(e -> cardLayout.show(mainPanel, "Bookstore"));
+        bookTrackerButton.addActionListener(e -> cardLayout.show(mainPanel, "BookTracker"));
+        exitButton.addActionListener(e -> {
+            int option = JOptionPane.showConfirmDialog(this, "Are you sure you want to exit?", "Exit", JOptionPane.YES_NO_OPTION);
+            if (option == JOptionPane.YES_OPTION) {
+                System.exit(0);
+            }
+        });
+
+        homePanel.add(viewInventoryButton);
+        homePanel.add(bookTrackerButton);
+        homePanel.add(exitButton);
+        return homePanel;
+    }
+
+    private JPanel createBookstorePage() {
+        JPanel bookstorePanel = new JPanel(new BorderLayout());
+
+        // Book Table
+        tableModel = new DefaultTableModel(new String[]{"Title", "Author", "Price", "Stock"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Disables editing of table cells
+            }
+        };
+        table = new JTable(tableModel);
+        refreshTable();
+        bookstorePanel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+        // Buttons Panel
+        JPanel buttonPanel = new JPanel();
+        JButton addToCartButton = new JButton("Add to Cart");
+        JButton checkoutButton = new JButton("Checkout");
+        JButton backButton = new JButton("Back");
+        buttonPanel.add(addToCartButton);
+        buttonPanel.add(checkoutButton);
+        buttonPanel.add(backButton);
+        bookstorePanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Cart Area
+        cartArea = new JTextArea(10, 30);
+        cartArea.setEditable(false);
+        bookstorePanel.add(new JScrollPane(cartArea), BorderLayout.EAST);
+
+        addToCartButton.addActionListener(e -> addToCart());
+        checkoutButton.addActionListener(e -> checkout());
+        backButton.addActionListener(e -> cardLayout.show(mainPanel, "Home"));
+
+        return bookstorePanel;
+    }
+
+    private JPanel createBookTrackerPage() {
+        JPanel trackerPanel = new JPanel(new BorderLayout());
+
+        trackerArea = new JTextArea(10, 30);
+        trackerArea.setEditable(false);
+        trackerPanel.add(new JScrollPane(trackerArea), BorderLayout.CENTER);
+
+        trackerArea.append("Book Tracking Status:\n");
+        trackerArea.append("Manufactured in Delhi, Posted to Chennai\n");
+        trackerArea.append("3 Days for Delivery\n");
+
+        // Back button for Book Tracker
+        JButton backButton = new JButton("Back");
+        backButton.addActionListener(e -> cardLayout.show(mainPanel, "Home"));
+        trackerPanel.add(backButton, BorderLayout.SOUTH);
+
+        return trackerPanel;
+    }
+
+    private void setupInventory() {
+        // Add more than 30 books to the inventory
+        inventory.addBook(new Book("The Catcher in the Rye", "J.D. Salinger", 10.99, 5));
+        inventory.addBook(new Book("To Kill a Mockingbird", "Harper Lee", 12.99, 3));
+        inventory.addBook(new Book("1984", "George Orwell", 15.50, 4));
+
+        // Add 30 more books here (for demonstration purposes, we'll just use some variations)
+        for (int i = 4; i <= 34; i++) {
+            inventory.addBook(new Book("Book Title " + i, "Author " + i, 10.00 + i, i));
+        }
+    }
+
+    private void refreshTable() {
+        tableModel.setRowCount(0);
+        for (Book book : inventory.getBooks()) {
+            tableModel.addRow(new Object[]{book.getTitle(), book.getAuthor(), book.getPrice(), book.getStock()});
+        }
+    }
+
+    private void addToCart() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow != -1) {
+            String title = table.getValueAt(selectedRow, 0).toString();
+            double price = Double.parseDouble(table.getValueAt(selectedRow, 2).toString());
+            int stock = Integer.parseInt(table.getValueAt(selectedRow, 3).toString());
+
+            if (stock > 0) {
+                String quantityStr = JOptionPane.showInputDialog(this, "Enter quantity:", "1");
+                int quantity = 1;
+                try {
+                    quantity = Integer.parseInt(quantityStr);
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Invalid quantity entered!", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+
+                if (quantity <= stock) {
+                    cartArea.append(title + " - $" + price + " x " + quantity + "\n");
+                    total += price * quantity;
+                    inventory.getBooks().get(selectedRow).setStock(stock - quantity);
+                    refreshTable();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Not enough stock!", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Out of Stock!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "No book selected!", "Warning", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    private void checkout() {
+        if (total > 0) {
+            JOptionPane.showMessageDialog(this, "Total: $" + total, "Checkout", JOptionPane.INFORMATION_MESSAGE);
+            cartArea.setText("");
+            total = 0;
+        } else {
+            JOptionPane.showMessageDialog(this, "Cart is empty!", "Warning", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    public static void main(String[] args) {
+        new Main();
+    }
+}
